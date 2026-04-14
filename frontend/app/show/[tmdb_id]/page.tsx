@@ -3,22 +3,100 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import HeroSection from "./HeroSection";
 import EpisodesSection from "./EpisodesSection";
+import {
+  tmdbFetch,
+  POSTER_BASE,
+  BACKDROP_BASE,
+  LOGO_BASE,
+  PROFILE_BASE,
+  STILL_BASE,
+  formatMedia,
+} from "@/lib/tmdb-server";
 
-export const metadata: Metadata = { title: "Show Detail" };
+export const revalidate = 3600;
 
-// Server component: needs absolute URL. Use NEXT_PUBLIC_SITE_URL on Vercel,
-// or localhost:3000 for local dev.
-const ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-async function apiFetch<T>(path: string): Promise<T | null> {
+// ── Helpers: mirrors what each route handler returns ─────────────────────────
+async function fetchDetail(id: number, type: string) {
   try {
-    const res = await fetch(`${ORIGIN}/api${path}`, { next: { revalidate: 3600 } });
-    if (!res.ok) return null;
-    return res.json() as Promise<T>;
-  } catch {
-    return null;
-  }
+    const d = await tmdbFetch(`/${type}/${id}`);
+    return {
+      id: d.id,
+      title: d.title ?? d.name,
+      overview: d.overview ?? "",
+      vote_average: d.vote_average ?? 0,
+      genres: d.genres ?? [],
+      dates: {
+        start: d.release_date ?? d.first_air_date ?? null,
+        end: d.last_air_date ?? null,
+      },
+      seasons: d.number_of_seasons ?? null,
+      runtime: d.runtime ?? (d.episode_run_time?.[0] ?? null),
+      paths: {
+        poster:   d.poster_path   ? `${POSTER_BASE}${d.poster_path}`     : null,
+        backdrop: d.backdrop_path ? `${BACKDROP_BASE}${d.backdrop_path}` : null,
+      },
+      status: d.status ?? null,
+    };
+  } catch { return null; }
 }
+
+async function fetchLogo(id: number, type: string) {
+  try {
+    const d = await tmdbFetch(`/${type}/${id}/images`, { include_image_language: "en,null" });
+    const logo = (d.logos ?? []).find(
+      (l: Record<string, unknown>) => typeof l.file_path === "string",
+    );
+    return { logo_path: logo ? `${LOGO_BASE}${logo.file_path}` : null };
+  } catch { return { logo_path: null }; }
+}
+
+async function fetchTrailer(id: number, type: string) {
+  try {
+    const d = await tmdbFetch(`/${type}/${id}/videos`);
+    const t = (d.results ?? []).find(
+      (v: Record<string, unknown>) => v.site === "YouTube" && v.type === "Trailer",
+    );
+    return { key: (t?.key as string) ?? null };
+  } catch { return { key: null }; }
+}
+
+async function fetchCredits(id: number, type: string) {
+  try {
+    const d = await tmdbFetch(`/${type}/${id}/credits`);
+    const cast = (d.cast ?? []).slice(0, 12).map((p: Record<string, unknown>) => ({
+      person_id:   p.id,
+      name:        p.name,
+      character:   p.character,
+      profile_path: p.profile_path ? `${PROFILE_BASE}${p.profile_path}` : null,
+    }));
+    return { cast };
+  } catch { return { cast: [] }; }
+}
+
+async function fetchSimilar(id: number, type: string) {
+  try {
+    const d = await tmdbFetch(`/${type}/${id}/recommendations`);
+    const results = (d.results ?? []).slice(0, 18).map(
+      (item: Record<string, unknown>) => formatMedia(item, type),
+    );
+    return { results };
+  } catch { return { results: [] }; }
+}
+
+async function fetchEpisodes(id: number, season: number) {
+  try {
+    const d = await tmdbFetch(`/tv/${id}/season/${season}`);
+    const episodes = (d.episodes ?? []).map((ep: Record<string, unknown>) => ({
+      episode_number: ep.episode_number,
+      name:           ep.name,
+      overview:       ep.overview ?? "",
+      runtime:        ep.runtime ?? null,
+      still_path:     ep.still_path ? `${STILL_BASE}${ep.still_path}` : null,
+    }));
+    return { episodes };
+  } catch { return { episodes: [] }; }
+}
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Genre      { id: number; name: string }
@@ -166,12 +244,12 @@ export default async function ShowDetailPage({
 
   const [detail, logoRes, trailerRes, creditsRes, similarRes, episodesRes] =
     await Promise.all([
-      apiFetch<ShowDetail>(`/tmdb/show-detail/${id}?type=${type}`),
-      apiFetch<{ logo_path: string | null }>(`/tmdb/show-logo/${id}?type=${type}`),
-      apiFetch<{ key: string | null }>(`/tmdb/show-trailer/${id}?type=${type}`),
-      apiFetch<{ cast: CastMember[] }>(`/tmdb/show-credits/${id}?type=${type}`),
-      apiFetch<{ results: MediaItem[] }>(`/tmdb/show-similar/${id}?type=${type}`),
-      type === "tv" ? apiFetch<{ episodes: Episode[] }>(`/tmdb/episodes/${id}/1`) : Promise.resolve(null),
+      fetchDetail(id, type),
+      fetchLogo(id, type),
+      fetchTrailer(id, type),
+      fetchCredits(id, type),
+      fetchSimilar(id, type),
+      type === "tv" ? fetchEpisodes(id, 1) : Promise.resolve(null),
     ]);
 
   if (!detail) notFound();
