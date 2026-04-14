@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API = "/api";
 
 type Status = "watching" | "completed" | "plan_to_watch" | "dropped";
 
@@ -42,7 +42,7 @@ export default function AddToListButton({ tmdbId, title, type, posterPath }: Pro
       });
       setSaved(status);
     } catch {
-      alert("Could not add to list — is the backend running?");
+      alert("Could not add to list.");
     } finally {
       setLoading(false);
     }

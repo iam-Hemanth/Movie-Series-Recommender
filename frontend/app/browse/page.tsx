@@ -14,7 +14,7 @@ interface MediaItem {
 
 interface Genre { id: number; name: string }
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API = "/api";
 
 export default function BrowsePage() {
   const [type,       setType]       = useState<"movie" | "tv">("movie");

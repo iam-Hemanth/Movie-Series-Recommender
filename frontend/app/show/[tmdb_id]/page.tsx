@@ -6,11 +6,13 @@ import EpisodesSection from "./EpisodesSection";
 
 export const metadata: Metadata = { title: "Show Detail" };
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Server component: needs absolute URL. Use NEXT_PUBLIC_SITE_URL on Vercel,
+// or localhost:3000 for local dev.
+const ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 async function apiFetch<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API}${path}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${ORIGIN}/api${path}`, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
     return res.json() as Promise<T>;
   } catch {
