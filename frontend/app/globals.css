@@ -1,0 +1,99 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg-page:      #0f0f0f;
+  --bg-card:      #1a1a1a;
+  --bg-card-hover:#222222;
+  --text-primary: #ffffff;
+  --text-muted:   rgba(255,255,255,0.5);
+  --text-hint:    rgba(255,255,255,0.3);
+  --border:       rgba(255,255,255,0.08);
+  --accent:       #e50914;
+
+  /* spacing */
+  --nav-height:   56px;
+  --nav-tabs-h:   44px;
+  --nav-total:    100px;   /* 56 + 44 */
+
+  /* radius */
+  --radius-sm:    6px;
+  --radius-card:  8px;
+  --radius-pill:  9999px;
+
+  /* shadow */
+  --shadow-card:  0 4px 24px rgba(0,0,0,0.55);
+  --shadow-glow:  0 0 20px rgba(229,9,20,0.3);
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg-page);
+  color:            var(--text-primary);
+  font-family:      "Inter", system-ui, sans-serif;
+  min-height:       100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: var(--bg-card); }
+::-webkit-scrollbar-thumb  { background: rgba(255,255,255,.15); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); }
+
+/* ── Utility ───────────────────────────────────────────────────────── */
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+.line-clamp-1 { overflow:hidden; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
+.line-clamp-2 { overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.line-clamp-3 { overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+
+/* ── Animations ────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite linear;
+}
+
+/* ── Micro-interactions ─────────────────────────────────────────────── */
+
+/* Poster card lift on hover */
+a:has(> div[style*="aspect-ratio"]):hover > div[style*="aspect-ratio"],
+a:has(> div[style*="aspectRatio"]):hover  > div[style*="aspectRatio"] {
+  transform:  translateY(-4px) scale(1.015);
+  transition: transform 0.25s ease;
+}
+
+/* Generic link / button press */
+button:active { transform: scale(0.97); }
+
+/* Input focus accent ring */
+input:focus, select:focus, textarea:focus {
+  outline:     none;
+  border-color: rgba(229,9,20,0.45) !important;
+  box-shadow:   0 0 0 3px rgba(229,9,20,0.12);
+}
+
+/* Smooth transitions on interactive elements */
+a, button { transition: opacity 0.2s, transform 0.2s; }
